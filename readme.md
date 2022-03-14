@@ -3,7 +3,7 @@ welcome to ethureum environment!
 
 ### hardhat
 
-* project main directory
+* project main architecture
 >$PROJECT_DIR
 > ->contracts {-#main solidity code-}
 > ->test {-#hardhat test case code-}
