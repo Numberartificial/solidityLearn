@@ -257,8 +257,8 @@
       ]
     },
     "/home/numberartificial/now/contracts/vesting/PeriodVestingERC20.sol": {
-      "lastModificationDate": 1647871208185,
-      "contentHash": "011938aa71e9b58ac66283b3d863d251",
+      "lastModificationDate": 1647871419115,
+      "contentHash": "1afbb9bff7e15f74521f986d1b2ce3b5",
       "sourceName": "contracts/vesting/PeriodVestingERC20.sol",
       "solcConfig": {
         "version": "0.8.11",
