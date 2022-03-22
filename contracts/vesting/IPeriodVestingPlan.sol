@@ -1,13 +1,18 @@
+// SPDX-License-Identifier: MIT
+// Numberartificial Contracts (last updated v0.0.1)
+
 pragma solidity ^0.8.0;
 
 /**
  * @dev Interface of the periodic vesting plan, main use case is to periodically release(transfer)
  * creator's tokens to beneficiary, then beneficiary can withdraw these released tokens into account.
  *
- * Note account -> Vesting plan created -> periodic released -> vesting balance -> withdraw -> account
+ * Note `creator account -> Vesting plan created -> periodic released -> vesting balance 
+ * -> withdraw -> beneficiary account` is the main work flow, and all actions
  * are serial without parallel according to ethereum system run time, 
  * one can only create vesting plan start at after right now
- * (and any happended withdraw is before this time).
+ * (and any happended withdraw is before this time, so one can withdraw all possible balance 
+ * at any time from all possible legal vesting plan).
  */
 interface IPeriodVestingPlan{
 
@@ -30,7 +35,7 @@ interface IPeriodVestingPlan{
      *
      * Returns a boolean value indicating whether the operation succeeded.
      *
-     * Emits an {Approval} event.
+     * Emits an {VestingPlanCreated} event.
      */
     function createVestingPlan(
         address to,
@@ -50,7 +55,7 @@ interface IPeriodVestingPlan{
      * This value changes when some peroidic vesting plan release(increase) 
      * or {withdrawVestingBalance} are called(decrease).
      */
-    function vestingBalance(address account, uint256 fromNowTo) external view returns(uint256);
+    function vestingBalance() external view returns(uint256);
 
     /**
      * @dev Move all `vestingBalance` to origin tokens.
@@ -62,7 +67,7 @@ interface IPeriodVestingPlan{
      *
      * Returns a boolean value indicating whether the operation succeeded.
      *
-     * Emits a {Transfer} event.
+     * Emits a {WithdrawVestingBalance} event.
      */
     function withdrawVestingBalance() external returns (bool);
 

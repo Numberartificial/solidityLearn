@@ -3,12 +3,13 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "hardhat/console.sol";
+import "./IPeriodVestingPlan.sol";
 
 /**
- * @dev Implementation of the {ERC20} with periodic vesting plan.
+ * @dev Implementation of the {IPeriodVestingPlan} to create periodic vesting plan with ERC20 tokens.
  * 
  */
-contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
+contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVestingPlan{
 
     struct VestingPlan{
         address from;
@@ -31,6 +32,9 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
         _mint(owner, amount);
     }
 
+    /**
+     * @dev See {IPeriodVestingPlan-createVestingPlan}.
+     */
     function createVestingPlan(
         address to,
         uint256 amount,
@@ -38,13 +42,20 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
         uint256 period,
         uint256 releaseCount,
         uint256 perPeriodReleaseAmount
-    ) public {
+    ) external virtual override returns(bool){
+        require(to != address(0), "PVERC20: beneficiary should not be the zero address");
+        require(amount > 0, "PVERC20: amount should > 0");
+        require(period > 0, "PVERC20: period should > 0");
+        require(planStartAt > block.timestamp, "PVERC20: plan should start at after right now");
+        require(amount == releaseCount * perPeriodReleaseAmount, "PVERC20: amount should equal to releaseCount * perPeriodReleaseAmount");
+
+        address owner = _msgSender();
         address vestingPool = address(this);
         VestingPlan memory vestingPlan = VestingPlan({
-            from:_msgSender(),
+            from:owner,
             to:to,
             amount:amount,
-            planStartAt:planStartAt ,
+            planStartAt:planStartAt,
             planEndAt:planStartAt + period * releaseCount - 1,
             period:period,
             releaseCount:releaseCount,
@@ -53,11 +64,14 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
         _vestings[vestingPlan.from][vestingPlan.to] = vestingPlan;
         _from_vestings[vestingPlan.from].push(vestingPlan);
         _to_vestings[vestingPlan.to].push(vestingPlan);
-        transfer(vestingPool, vestingPlan.amount);
+        _transfer(owner, vestingPool, vestingPlan.amount);
+        emit VestingPlanCreated(owner, to, amount);
+        return true;
     }
 
-    function vestingBalance(address account, uint256 fromNowTo) external view returns(uint256){
-        return _vestingBalance(account, fromNowTo); 
+    function vestingBalance() external view virtual override returns(uint256){
+        address owner = _msgSender();
+        return _vestingBalance(owner, block.timestamp); 
     }
 
     function _vestingBalance(address account, uint256 fromNowTo) internal view returns(uint256){
@@ -78,10 +92,13 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
         return balance;
     }
 
-    function withdrawVestingBalance() public returns (bool){
+    function withdrawVestingBalance() external virtual override returns (bool){
         address owner = _msgSender();
+        console.log("before transefer ts: %s", block.timestamp);
         uint256 balance = _vestingBalance(owner, block.timestamp);
         _transfer(address(this), owner, balance);
+        console.log("after transfer ts: %s", block.timestamp);
+        lastWithdrawTimestamp[owner] = block.timestamp;
         return true;
     }
 
