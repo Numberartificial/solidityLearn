@@ -1,8 +1,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "hardhat/console.sol";
 
+/**
+ * @dev Implementation of the {ERC20} with periodic vesting plan.
+ * 
+ */
 contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
 
     struct VestingPlan{
@@ -10,6 +15,7 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
         address to;
         uint256 amount;
         uint256 planStartAt;
+        uint256 planEndAt;
         uint256 period;
         uint256 releaseCount;
         uint256 perPeriodReleaseAmount;
@@ -18,10 +24,11 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
     mapping(address => mapping(address => VestingPlan)) private _vestings;
     mapping(address => VestingPlan[]) private _from_vestings;
     mapping(address => VestingPlan[]) private _to_vestings;
+    mapping(address => uint256) private lastWithdrawTimestamp;
 
-    constructor(){
+    constructor(uint amount){
         address owner = _msgSender();
-        _mint(owner, 10000);
+        _mint(owner, amount);
     }
 
     function createVestingPlan(
@@ -37,7 +44,8 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
             from:_msgSender(),
             to:to,
             amount:amount,
-            planStartAt:planStartAt,
+            planStartAt:planStartAt ,
+            planEndAt:planStartAt + period * releaseCount - 1,
             period:period,
             releaseCount:releaseCount,
             perPeriodReleaseAmount:perPeriodReleaseAmount
@@ -48,26 +56,34 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVE20"){
         transfer(vestingPool, vestingPlan.amount);
     }
 
-    function vestingBalance(address account, uint256 fromNowTo) public view returns(uint256){
+    function vestingBalance(address account, uint256 fromNowTo) external view returns(uint256){
+        return _vestingBalance(account, fromNowTo); 
+    }
+
+    function _vestingBalance(address account, uint256 fromNowTo) internal view returns(uint256){
         uint256 balance;
         VestingPlan[] storage to_account_vestings = _to_vestings[account];
+        uint256 last = lastWithdrawTimestamp[account];
         for (uint i = 0; i <  to_account_vestings.length; i++){
             VestingPlan storage v = to_account_vestings[i];
-            console.log("%s %s", fromNowTo, v.planStartAt);
-            uint256 periods = uint256((fromNowTo - v.planStartAt) / v.period);
-            balance += periods * v.perPeriodReleaseAmount;
+            console.log("%s %s %s", fromNowTo, v.planStartAt, v.planEndAt);
+            if (fromNowTo >= v.planStartAt && last < v.planEndAt){
+                uint256 periods = uint256(
+                    (Math.min(fromNowTo, v.planEndAt) - Math.max(last, v.planStartAt - 1)) /
+                     v.period
+                     );
+                balance += periods * v.perPeriodReleaseAmount;
+            }
         }
         return balance;
     }
 
-    // function createVestingPlan(VestingPlan[] memory vestingPlans) public {
-    //     address msgSender = _msgSender();
-    //     for (uint i = 0; i < vestingPlans.length; i++) {
-    //         _vestings[msgSender].push(VestingPlan({
-    //             from: vestingPlans[i],
-    //             voteCount: 0
-    //         }));
-    //     }
-    // }
+    function withdrawVestingBalance() public returns (bool){
+        address owner = _msgSender();
+        uint256 balance = _vestingBalance(owner, block.timestamp);
+        _transfer(address(this), owner, balance);
+        return true;
+    }
+
 }
 
