@@ -22,13 +22,16 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
         uint256 perPeriodReleaseAmount;
     }
 
+   // An address type variable is used to store ethereum accounts.
+    address public owner;
+
     mapping(address => mapping(address => VestingPlan)) private _vestings;
     mapping(address => VestingPlan[]) private _from_vestings;
     mapping(address => VestingPlan[]) private _to_vestings;
     mapping(address => uint256) private lastWithdrawTimestamp;
 
     constructor(uint amount){
-        address owner = _msgSender();
+        owner = _msgSender();
         _mint(owner, amount);
     }
 
@@ -47,13 +50,14 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
         require(amount > 0, "PVERC20: amount should > 0");
         require(period > 0, "PVERC20: period should > 0");
         require(releaseCount > 0, "PVERC20: releaseCount should > 0");
+        console.log("start at %s, block.timestamp %s", planStartAt, block.timestamp);
         require(planStartAt > block.timestamp, "PVERC20: plan should start at after right now");
         require(amount == releaseCount * perPeriodReleaseAmount, "PVERC20: amount should equal to releaseCount * perPeriodReleaseAmount");
 
-        address owner = _msgSender();
+        address account = _msgSender();
         address vestingPool = address(this);
         VestingPlan memory vestingPlan = VestingPlan({
-            from:owner,
+            from:account,
             to:to,
             amount:amount,
             planStartAt:planStartAt,
@@ -65,8 +69,8 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
         _vestings[vestingPlan.from][vestingPlan.to] = vestingPlan;
         _from_vestings[vestingPlan.from].push(vestingPlan);
         _to_vestings[vestingPlan.to].push(vestingPlan);
-        _transfer(owner, vestingPool, vestingPlan.amount);
-        emit VestingPlanCreated(owner, to, amount);
+        _transfer(account, vestingPool, vestingPlan.amount);
+        emit VestingPlanCreated(account, to, amount);
         return true;
     }
 
@@ -74,9 +78,10 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
     /**
      * @dev See {IPeriodVestingPlan-vestingBalance}.
      */
-    function vestingBalance() external view virtual override returns(uint256){
-        address owner = _msgSender();
-        return _vestingBalance(owner, block.timestamp); 
+    function vestingBalance(uint256 atTime) external view virtual override returns(uint256){
+        require(atTime >= block.timestamp, "PVERC20: balance check should not check former time point");
+        address account = _msgSender();
+        return _vestingBalance(account, atTime); 
     }
 
     function _vestingBalance(address account, uint256 fromNowTo) internal view returns(uint256){
@@ -87,11 +92,11 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
 
         for (uint i = 0; i < to_account_vestings.length; i++){
             VestingPlan storage v = to_account_vestings[i];
-            console.log("%s %s %s", fromNowTo, v.planStartAt, v.planEndAt);
+            console.log("now:%s s:%s t:%s", fromNowTo, v.planStartAt, v.planEndAt);
             // plan started and last withdraw do not handle all release tokens.
             if (fromNowTo >= v.planStartAt && last < v.planEndAt){
                 uint256 fromNowPeriod = uint256((Math.min(fromNowTo, v.planEndAt) - v.planStartAt + 1) / v.period);
-                uint256 lastPeriod = uint256(Math.max(last - v.planStartAt + 1, 0) / v.period);
+                uint256 lastPeriod = uint256((Math.max(last, v.planStartAt - 1) - (v.planStartAt - 1)) / v.period);
                 uint256 newPeriods = fromNowPeriod - lastPeriod;
                 balance += newPeriods * v.perPeriodReleaseAmount;
             }
@@ -104,12 +109,12 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
      * @dev See {IPeriodVestingPlan-withdrawVestingBalance}.
      */
     function withdrawVestingBalance() external virtual override returns (bool){
-        address owner = _msgSender();
+        address account = _msgSender();
         console.log("before transefer ts: %s", block.timestamp);
-        uint256 balance = _vestingBalance(owner, block.timestamp);
-        _transfer(address(this), owner, balance);
+        uint256 balance = _vestingBalance(account, block.timestamp);
+        _transfer(address(this), account, balance);
         console.log("after transfer ts: %s", block.timestamp);
-        lastWithdrawTimestamp[owner] = block.timestamp;
+        lastWithdrawTimestamp[account] = block.timestamp;
         return true;
     }
 

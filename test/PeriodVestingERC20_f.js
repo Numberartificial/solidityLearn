@@ -8,7 +8,7 @@ const { expect } = require("chai");
 // `describe` receives the name of a section of your test suite, and a callback.
 // The callback must define the tests of that section. This callback can't be
 // an async function.
-describe("Token contract", function () {
+describe("hardhatToken", function () {
   // Mocha has four functions that let you hook into the the test runner's
   // lifecyle. These are: `before`, `beforeEach`, `after`, `afterEach`.
 
@@ -20,6 +20,7 @@ describe("Token contract", function () {
 
   let Token;
   let hardhatToken;
+  let amount = 10000;
   let owner;
   let addr1;
   let addr2;
@@ -29,13 +30,13 @@ describe("Token contract", function () {
   // time. It receives a callback, which can be async.
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
-    Token = await ethers.getContractFactory("Token");
+    Token = await ethers.getContractFactory("PeriodVestingERC20");
     [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
 
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
     // mined.
-    hardhatToken = await Token.deploy();
+    hardhatToken = await Token.deploy(amount);
   });
 
   // You can nest describe calls to create subsections.
@@ -56,6 +57,7 @@ describe("Token contract", function () {
     it("Should assign the total supply of tokens to the owner", async function () {
       const ownerBalance = await hardhatToken.balanceOf(owner.address);
       expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
+      expect(ownerBalance).to.equal(amount);
     });
   });
 
@@ -78,9 +80,10 @@ describe("Token contract", function () {
 
       // Try to send 1 token from addr1 (0 tokens) to owner (1000000 tokens).
       // `require` will evaluate false and revert the transaction.
-      await expect(
-        hardhatToken.connect(addr1).transfer(owner.address, 1)
-      ).to.be.revertedWith("Not enough tokens");
+      // await expect(
+        hardhatToken.connect(addr1).transfer(owner.address, 1);
+      // ).to.equal(false);
+      //.be.revertedWith("Not enough tokens");
 
       // Owner balance shouldn't have changed.
       expect(await hardhatToken.balanceOf(owner.address)).to.equal(
@@ -106,6 +109,44 @@ describe("Token contract", function () {
 
       const addr2Balance = await hardhatToken.balanceOf(addr2.address);
       expect(addr2Balance).to.equal(50);
+    });
+  });
+
+
+  describe("Vesting plans", function () {
+    it("single plan", async function () {
+      amount = 1000;
+      period = 10;
+      releaseCount = 5;
+      perPeriodAmount = 200;
+      // await hardhatToken.connect(owner).transfer(addr1.address, amount);
+      const ownerBalance = await hardhatToken.balanceOf(owner.address);
+      const addr1Balance = await hardhatToken.balanceOf(addr1.address);
+      const addr2Balance = await hardhatToken.balanceOf(addr2.address);
+      console.log('log %s %s %s', ownerBalance, addr1Balance, addr2Balance);
+      expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
+
+      // Transfer amount tokens from owner to addr1.
+      await hardhatToken.connect(owner).transfer(addr1.address, amount);
+      const ownerNewBalance = parseInt(await hardhatToken.balanceOf(owner.address));
+      expect(ownerBalance).to.equal(ownerNewBalance + amount);
+
+      now = Math.floor(new Date().getTime() / 1000);
+      const created = await hardhatToken.connect(addr1).createVestingPlan(
+        addr2.address, 
+        amount, 
+        now + 20,
+        period,
+        releaseCount,
+        perPeriodAmount
+        );
+
+      let sleep = (time) => new Promise((resolve) => {setTimeout(resolve, time)})
+      for (i = 0; i < releaseCount + 5; i++){
+        //  await sleep(period * 1000).then(
+           expect(await hardhatToken.connect(addr2).vestingBalance(now + 20 + period * (i + 1) - 1))
+           .to.equal(Math.min((i + 1), releaseCount) * perPeriodAmount);
+      }
     });
   });
 });

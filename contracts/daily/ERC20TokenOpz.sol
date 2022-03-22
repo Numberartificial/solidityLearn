@@ -9,7 +9,7 @@ contract GLDToken is ERC20 {
     constructor(uint256 initialSupply) ERC20("Gold", "GLD") {
         _mint(msg.sender, initialSupply);
     }
-
+   
     function _mintMinerReward() internal {
         _mint(block.coinbase, 1000);
     }

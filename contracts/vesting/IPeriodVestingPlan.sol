@@ -19,7 +19,8 @@ pragma solidity ^0.8.0;
  * It is a feasible way to implement these:
  *   block.timestamp as the universe time, 
  *   each vesting plan should store in block which block.timestamp < vesting plan start at time,
- *   each withdraw action occur in block which withdraw all balance <= block.timestamp,
+ *   each withdraw action occur in block which withdraw all balance <= block.timestamp after 
+ *   last withdraw action remain,
  *   and balance action audit each vesting plan released amount 
  *   from Max(plan start at, last withdraw action + 1) to Min(block.timestamp, plan end at).
  */
@@ -61,10 +62,14 @@ interface IPeriodVestingPlan{
      * which are released periodically according to vesting plans;
      * This is zero by default.
      *
+     * Note `atTime` is the audit time with unix timestamp(second) format, 
+     * according to exist vesting plan and withdraw actions.
+     * `atTime` should >= now timestamp, means at that time, i will get those vesting balance.
+     *
      * This value changes when some peroidic vesting plan release(increase) 
      * or {withdrawVestingBalance} are called(decrease).
      */
-    function vestingBalance() external view returns(uint256);
+    function vestingBalance(uint256 atTime) external view returns(uint256);
 
     /**
      * @dev Move all `vestingBalance` to origin tokens.
