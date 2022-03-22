@@ -132,10 +132,11 @@ describe("hardhatToken", function () {
       expect(ownerBalance).to.equal(ownerNewBalance + amount);
 
       now = Math.floor(new Date().getTime() / 1000);
+      startAt= now + 20;
       const created = await hardhatToken.connect(addr1).createVestingPlan(
         addr2.address, 
         amount, 
-        now + 20,
+        startAt,
         period,
         releaseCount,
         perPeriodAmount
@@ -144,7 +145,7 @@ describe("hardhatToken", function () {
       let sleep = (time) => new Promise((resolve) => {setTimeout(resolve, time)})
       for (i = 0; i < releaseCount + 5; i++){
         //  await sleep(period * 1000).then(
-           expect(await hardhatToken.connect(addr2).vestingBalance(now + 20 + period * (i + 1) - 1))
+           expect(await hardhatToken.connect(addr2).vestingBalance(startAt + period * (i + 1) - 1))
            .to.equal(Math.min((i + 1), releaseCount) * perPeriodAmount);
       }
     });
