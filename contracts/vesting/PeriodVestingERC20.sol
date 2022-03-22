@@ -46,6 +46,7 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
         require(to != address(0), "PVERC20: beneficiary should not be the zero address");
         require(amount > 0, "PVERC20: amount should > 0");
         require(period > 0, "PVERC20: period should > 0");
+        require(releaseCount > 0, "PVERC20: releaseCount should > 0");
         require(planStartAt > block.timestamp, "PVERC20: plan should start at after right now");
         require(amount == releaseCount * perPeriodReleaseAmount, "PVERC20: amount should equal to releaseCount * perPeriodReleaseAmount");
 
@@ -69,29 +70,39 @@ contract PeriodVestingERC20 is ERC20("PeriodVestingERC20", "PVERC20"), IPeriodVe
         return true;
     }
 
+
+    /**
+     * @dev See {IPeriodVestingPlan-vestingBalance}.
+     */
     function vestingBalance() external view virtual override returns(uint256){
         address owner = _msgSender();
         return _vestingBalance(owner, block.timestamp); 
     }
 
     function _vestingBalance(address account, uint256 fromNowTo) internal view returns(uint256){
+        uint256 last = lastWithdrawTimestamp[account];
+        require(last < fromNowTo, "PVERC20: balance check should after last withdraw action");
         uint256 balance;
         VestingPlan[] storage to_account_vestings = _to_vestings[account];
-        uint256 last = lastWithdrawTimestamp[account];
-        for (uint i = 0; i <  to_account_vestings.length; i++){
+
+        for (uint i = 0; i < to_account_vestings.length; i++){
             VestingPlan storage v = to_account_vestings[i];
             console.log("%s %s %s", fromNowTo, v.planStartAt, v.planEndAt);
+            // plan started and last withdraw do not handle all release tokens.
             if (fromNowTo >= v.planStartAt && last < v.planEndAt){
-                uint256 periods = uint256(
-                    (Math.min(fromNowTo, v.planEndAt) - Math.max(last, v.planStartAt - 1)) /
-                     v.period
-                     );
-                balance += periods * v.perPeriodReleaseAmount;
+                uint256 fromNowPeriod = uint256((Math.min(fromNowTo, v.planEndAt) - v.planStartAt + 1) / v.period);
+                uint256 lastPeriod = uint256(Math.max(last - v.planStartAt + 1, 0) / v.period);
+                uint256 newPeriods = fromNowPeriod - lastPeriod;
+                balance += newPeriods * v.perPeriodReleaseAmount;
             }
         }
         return balance;
     }
 
+
+    /**
+     * @dev See {IPeriodVestingPlan-withdrawVestingBalance}.
+     */
     function withdrawVestingBalance() external virtual override returns (bool){
         address owner = _msgSender();
         console.log("before transefer ts: %s", block.timestamp);

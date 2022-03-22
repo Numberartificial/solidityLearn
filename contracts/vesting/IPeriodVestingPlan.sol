@@ -13,6 +13,15 @@ pragma solidity ^0.8.0;
  * one can only create vesting plan start at after right now
  * (and any happended withdraw is before this time, so one can withdraw all possible balance 
  * at any time from all possible legal vesting plan).
+ *
+ * IMPORTANT: Implement should be careful of any tokens mismatch situation, vesting plan just a
+ * package to <safe> transfer tokens periodically, no tokens mint and no tokens burn.
+ * It is a feasible way to implement these:
+ *   block.timestamp as the universe time, 
+ *   each vesting plan should store in block which block.timestamp < vesting plan start at time,
+ *   each withdraw action occur in block which withdraw all balance <= block.timestamp,
+ *   and balance action audit each vesting plan released amount 
+ *   from Max(plan start at, last withdraw action + 1) to Min(block.timestamp, plan end at).
  */
 interface IPeriodVestingPlan{
 
