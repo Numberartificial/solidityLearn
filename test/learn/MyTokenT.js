@@ -8,7 +8,7 @@ const { expect } = require("chai");
 // `describe` receives the name of a section of your test suite, and a callback.
 // The callback must define the tests of that section. This callback can't be
 // an async function.
-describe("learn", function () {
+describe("learn/openZeppelin", function () {
   // Mocha has four functions that let you hook into the the test runner's
   // lifecyle. These are: `before`, `beforeEach`, `after`, `afterEach`.
 
@@ -19,24 +19,18 @@ describe("learn", function () {
   // `before` and `beforeEach` callbacks.
 
   let lib;
-  let hackMe;
-  let attack;
 
   // `beforeEach` will run before each test, re-deploying the contract every
   // time. It receives a callback, which can be async.
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
     [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
-    let d1 = await ethers.getContractFactory("Lib2");
-    let d2 = await ethers.getContractFactory("HackMe2");
-    let d3 = await ethers.getContractFactory("Attack2");
+    let d1 = await ethers.getContractFactory("MyToken");
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
     // mined.
     // hardhatToken = await Token.deploy(amount);
-    lib = await d1.deploy();
-    hackMe = await d2.deploy(lib.address);
-    attack = await d3.deploy(hackMe.address);
+    lib = await d1.deploy(addr2.address);
   });
 
   // You can nest describe calls to create subsections.
@@ -52,16 +46,14 @@ describe("learn", function () {
       // This test expects the owner variable stored in the contract to be equal
       // to our Signer's owner.
       expect(await lib.owner()).to.equal(owner.address);
+      await lib.connect(addr2).mint(addr1.address, 1000);
     });
 
   });
 
-  describe("Attack", function () {
+  describe("test", function () {
     it("Should attack changing the lib owner", async function () {
-      await attack.attack();
-      const hackMeOwner = await hackMe.owner();
-      expect(hackMeOwner).to.equal(await attack.attacker());
-
+      expect(await lib.testToString(123456)).to.equal("123456");
     });
 
   });
