@@ -18,13 +18,6 @@ describe("learn", function () {
   // A common pattern is to declare some variables, and assign them in the
   // `before` and `beforeEach` callbacks.
 
-  let Token;
-  let hardhatToken;
-  let amount = 10000;
-  let owner;
-  let addr1;
-  let addr2;
-  let addrs;
   let lib;
   let hackMe;
   let attack;
