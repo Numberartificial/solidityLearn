@@ -30,7 +30,7 @@ describe("learn/openZeppelin", function () {
     // for it to be deployed(), which happens once its transaction has been
     // mined.
     // hardhatToken = await Token.deploy(amount);
-    lib = await d1.deploy(addr2.address);
+    lib = await d1.deploy(addr2.address, addr1.address);
   });
 
   // You can nest describe calls to create subsections.

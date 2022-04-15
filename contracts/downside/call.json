@@ -1,0 +1,95 @@
+
+======= call.sol:C =======
+EVM assembly:
+    /* "call.sol":62:204  contract C {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  0x00
+  dup1
+  revert
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "call.sol":62:204  contract C {... */
+      mstore(0x40, 0x80)
+      jumpi(tag_1, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0xee919d50
+      eq
+      tag_2
+      jumpi
+    tag_1:
+      0x00
+      dup1
+      revert
+        /* "call.sol":144:202  function setA(uint256 _a) public payable {... */
+    tag_2:
+      tag_3
+      tag_4
+      calldatasize
+      0x04
+      tag_5
+      jump	// in
+    tag_4:
+        /* "call.sol":191:192  a */
+      0x00
+        /* "call.sol":191:197  a = _a */
+      sstore
+        /* "call.sol":144:202  function setA(uint256 _a) public payable {... */
+      jump
+    tag_3:
+      stop
+        /* "#utility.yul":14:194   */
+    tag_5:
+        /* "#utility.yul":73:79   */
+      0x00
+        /* "#utility.yul":126:128   */
+      0x20
+        /* "#utility.yul":114:123   */
+      dup3
+        /* "#utility.yul":105:112   */
+      dup5
+        /* "#utility.yul":101:124   */
+      sub
+        /* "#utility.yul":97:129   */
+      slt
+        /* "#utility.yul":94:146   */
+      iszero
+      tag_10
+      jumpi
+        /* "#utility.yul":142:143   */
+      0x00
+        /* "#utility.yul":139:140   */
+      dup1
+        /* "#utility.yul":132:144   */
+      revert
+        /* "#utility.yul":94:146   */
+    tag_10:
+      pop
+        /* "#utility.yul":165:188   */
+      calldataload
+      swap2
+        /* "#utility.yul":14:194   */
+      swap1
+      pop
+      jump	// out
+
+    auxdata: 0xa26469706673582212201599009e2479f7ff6b7e066810abe5b70aa1f5caa2461c48232831817206371464736f6c634300080d0033
+}
+
+Binary:
+6080604052348015600f57600080fd5b5060818061001e6000396000f3fe608060405260043610601c5760003560e01c8063ee919d50146021575b600080fd5b6031602c3660046033565b600055565b005b600060208284031215604457600080fd5b503591905056fea26469706673582212201599009e2479f7ff6b7e066810abe5b70aa1f5caa2461c48232831817206371464736f6c634300080d0033
