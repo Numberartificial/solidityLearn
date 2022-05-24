@@ -29,13 +29,17 @@ npx hardhat test
 
 #hardhat deploy
 npx hardhat run scripts/deploy.js --network <network-name>
+
+npx hardhat node
+npx hardhat run scripts/hello-deploy.ts --network localhost
 ```
 
 ```
 yarn init -y
 yarn add -D hardhat
 npx hardhad
-yarn add -D @nomiclabs/hardhat-ethers ethers @nomiclabs/hardhat-waffle ethereum-waffke chai
+yarn add -D @nomiclabs/hardhat-ethers ethers @nomiclabs/hardhat-waffle ethereum-waffle chai
+yarn add --save-dev ts-node typescript
 ```
 
 ### remix
@@ -46,4 +50,15 @@ yarn add -D @nomiclabs/hardhat-ethers ethers @nomiclabs/hardhat-waffle ethereum-
 npm install -g @remix-project/remixd
 remixd -s <absolute-path-to-the-shared-folder> --remix-ide <your-remix-ide-URL-instance>
 remixd -s /home/numberartificial/now --remix-ide https://remix.ethereum.org
+```
+
+
+### tools
+
+```
+python3 -m http.server 6969
+```
+
+```
+npx webpack
 ```

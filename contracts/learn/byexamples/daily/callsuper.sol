@@ -48,7 +48,6 @@ contract Callsuper_B is Callsuper_A {
         console.log("B.bar");
         super.bar();
     }
-    function cannot() 
 }
 
 contract Callsuper_C is Callsuper_A {
